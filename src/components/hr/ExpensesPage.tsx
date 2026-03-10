@@ -134,14 +134,32 @@ export default function ExpensesPage() {
     setViewDialogOpen(true);
   };
 
-  const downloadExpensePdf = () => {
+  const downloadExpensePdf = async () => {
     if (!viewingExpense) return;
 
     const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
 
     // Header styling
-    doc.setFillColor(30, 58, 95); // #ea580c
+    doc.setFillColor(234, 88, 12); // #ea580c
     doc.rect(0, 0, 210, 40, 'F');
+
+    // Fetch logo
+    try {
+      const imgRes = await fetch('/logo.png');
+      const imgBlob = await imgRes.blob();
+      const reader = new FileReader();
+
+      await new Promise((resolve) => {
+        reader.onloadend = () => {
+          doc.addImage(reader.result as string, 'PNG', pageWidth - 70, 12, 60, 15);
+          resolve(null);
+        };
+        reader.readAsDataURL(imgBlob);
+      });
+    } catch (e) {
+      console.error("Could not add logo to PDF:", e);
+    }
 
     doc.setTextColor(255, 255, 255);
     doc.setFontSize(24);
@@ -561,6 +579,9 @@ export default function ExpensesPage() {
       <Dialog open={viewDialogOpen} onOpenChange={setViewDialogOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
+            <div className="flex justify-center mb-4">
+              <img src="/logo.png" alt="Ravaan Space Logo" className="h-10 w-auto object-contain" />
+            </div>
             <DialogTitle className="text-[#ea580c] flex items-center gap-2">
               <Receipt className="w-5 h-5" />
               Expense Details
