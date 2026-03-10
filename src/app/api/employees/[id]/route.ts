@@ -78,6 +78,8 @@ export async function DELETE(
     await db.expense.deleteMany({ where: { addedBy: id } });
     await db.payslip.deleteMany({ where: { employeeId: id } });
     await db.leave.deleteMany({ where: { employeeId: id } });
+    await db.attendance.deleteMany({ where: { employeeId: id } });
+    await db.notification.deleteMany({ where: { userId: id } });
 
     // Delete employee
     await db.employee.delete({
