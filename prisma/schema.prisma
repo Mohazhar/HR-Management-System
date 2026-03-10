@@ -1,0 +1,96 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Employee {
+  id           String   @id @default(cuid())
+  employeeId   String   @unique
+  name         String
+  email        String   @unique
+  password     String
+  designation  String
+  department   String
+  role         String   @default("employee") // employee or admin
+  leaveBalance String   @default("{\"annual\":15,\"sick\":10,\"personal\":5}") // JSON string
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  leaves       Leave[]
+  payslips     Payslip[]
+  expenses     Expense[]
+  notifications Notification[]
+  attendances  Attendance[]
+}
+
+model Leave {
+  id           String   @id @default(cuid())
+  employeeId   String
+  leaveType    String   // annual, sick, personal
+  fromDate     String
+  toDate       String
+  reason       String
+  status       String   @default("pending") // pending, approved, rejected
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  employee     Employee @relation(fields: [employeeId], references: [id])
+}
+
+model Payslip {
+  id           String   @id @default(cuid())
+  employeeId   String
+  month        Int      // 1-12
+  year         Int
+  basicSalary  Float
+  allowances   Float
+  deductions   Float
+  netSalary    Float
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  employee     Employee @relation(fields: [employeeId], references: [id])
+}
+
+model Expense {
+  id            String   @id @default(cuid())
+  date          String
+  category      String
+  description   String
+  amount        Float
+  paymentMethod String
+  addedBy       String
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  employee      Employee @relation(fields: [addedBy], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  type      String   @default("info") // info, leave_request, etc
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  user      Employee @relation(fields: [userId], references: [id])
+}
+
+model Attendance {
+  id          String    @id @default(cuid())
+  employeeId  String
+  date        String    // Format YYYY-MM-DD for easy querying
+  checkIn     DateTime
+  checkOut    DateTime?
+  status      String    @default("present") // present, late, half_day
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  employee    Employee  @relation(fields: [employeeId], references: [id])
+
+  @@unique([employeeId, date]) // one attendance record per day per employee
+}
