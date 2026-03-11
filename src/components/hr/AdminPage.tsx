@@ -454,6 +454,23 @@ export default function AdminPage() {
     }
   };
 
+  const handleDeletePayslip = async (id: string) => {
+    if (!confirm('Are you sure you want to delete this payslip?')) return;
+    try {
+      const res = await fetch(`/api/payslips/${id}`, {
+        method: 'DELETE',
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchData();
+      } else {
+        alert(data.error || 'Failed to delete payslip');
+      }
+    } catch (err) {
+      console.error('Error deleting payslip:', err);
+    }
+  };
+
   const handleCheckIn = async () => {
     try {
       const res = await fetch('/api/attendance', { method: 'POST' });
@@ -826,6 +843,14 @@ export default function AdminPage() {
                                 onClick={() => generatePayslipPDF(payslip)}
                               >
                                 <Download className="w-4 h-4" />
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="text-red-500 hover:text-red-600 hover:border-red-300"
+                                onClick={() => handleDeletePayslip(payslip.id)}
+                              >
+                                <Trash2 className="w-4 h-4" />
                               </Button>
                             </div>
                           </TableCell>

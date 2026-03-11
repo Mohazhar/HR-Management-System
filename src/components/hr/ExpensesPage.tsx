@@ -295,6 +295,36 @@ export default function ExpensesPage() {
     }
   };
 
+  const downloadAllExpensesCSV = () => {
+    if (expenses.length === 0) return;
+
+    // Build standard CSV header row
+    const headers = ['Date', 'Category', 'Description', 'Amount', 'Payment Method', 'Added By (Employee ID)'];
+
+    // Convert all expenses
+    const rows = expenses.map(expense => [
+      expense.date,
+      `"${expense.category}"`,
+      `"${expense.description.replace(/"/g, '""')}"`, // escape quotes natively
+      expense.amount,
+      `"${expense.paymentMethod}"`,
+      `"${expense.employee?.name || 'N/A'} (${expense.employee?.employeeId || 'N/A'})"`
+    ]);
+
+    const csvContent = [headers.join(','), ...rows.map(row => row.join(','))].join('\n');
+
+    // Safely encode and trigger browser download
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+
+    link.href = url;
+    link.setAttribute('download', 'ravaan_space_expenses.csv');
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   // Calculate monthly summary
   const monthlySummary = expenses.reduce((acc, expense) => {
     const date = new Date(expense.date);
@@ -317,10 +347,16 @@ export default function ExpensesPage() {
           <h1 className="text-2xl font-bold text-[#ea580c]">Expenses</h1>
           <p className="text-gray-500">Manage company expenses and track spending</p>
         </div>
-        <Button onClick={handleOpenAdd} className="bg-[#ea580c] hover:bg-[#c2410c] text-white">
-          <Plus className="w-4 h-4 mr-2" />
-          Add Expense
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={downloadAllExpensesCSV} variant="outline" className="border-[#ea580c] text-[#ea580c] hover:bg-[#ea580c] hover:text-white">
+            <Download className="w-4 h-4 mr-2" />
+            Download
+          </Button>
+          <Button onClick={handleOpenAdd} className="bg-[#ea580c] hover:bg-[#c2410c] text-white">
+            <Plus className="w-4 h-4 mr-2" />
+            Add Expense
+          </Button>
+        </div>
       </div>
 
       {/* Summary Cards */}
