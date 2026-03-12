@@ -1007,6 +1007,10 @@ export default function AdminPage() {
                   <SelectContent>
                     <SelectItem value="employee">Employee</SelectItem>
                     <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="trainee">Trainee</SelectItem>
+                    <SelectItem value="intern">Intern</SelectItem>
+                    <SelectItem value="contract">Contract</SelectItem>
+                    <SelectItem value="manager">Manager</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
