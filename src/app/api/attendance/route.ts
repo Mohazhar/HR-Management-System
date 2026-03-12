@@ -160,11 +160,17 @@ export async function PUT(request: NextRequest) {
         });
 
         return NextResponse.json({ success: true, attendance });
-    } catch (error) {
-        console.error('Attendance PUT error detail:', error);
+    } catch (error: any) {
+        console.error('Attendance PUT error detail:', {
+            message: error.message,
+            code: error.code,
+            meta: error.meta,
+            stack: error.stack
+        });
         return NextResponse.json({
             success: false,
-            error: error instanceof Error ? error.message : 'Action failed'
+            error: error.message || 'Action failed',
+            details: error.code || 'UNKNOWN_ERROR'
         }, { status: 500 });
     }
 }
