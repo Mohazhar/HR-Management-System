@@ -18,12 +18,33 @@ export default function Home() {
   const { user, loading } = useAuth();
   const [currentPage, setCurrentPage] = useState<Page>('dashboard');
 
-  // Reset to dashboard when logged out so next login starts fresh
+  // Sync state with browser history for back button support
   useEffect(() => {
     if (!user) {
       setCurrentPage('dashboard');
+      return;
     }
+
+    const handlePopState = (event: PopStateEvent) => {
+      if (event.state && event.state.page) {
+        setCurrentPage(event.state.page);
+      } else {
+        setCurrentPage('dashboard');
+      }
+    };
+
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
   }, [user]);
+
+  // Push to history when page changes manually
+  const navigateTo = (page: Page) => {
+    if (page === currentPage) return;
+
+    // Add current view to history stack
+    window.history.pushState({ page }, '', '');
+    setCurrentPage(page);
+  };
 
   // Show loading screen while checking authentication
   if (loading) {
@@ -46,7 +67,7 @@ export default function Home() {
   const renderPage = () => {
     switch (currentPage) {
       case 'dashboard':
-        return <DashboardPage onNavigate={setCurrentPage} />;
+        return <DashboardPage onNavigate={navigateTo} />;
       case 'apply-leave':
         return <ApplyLeavePage />;
       case 'payslips':
@@ -58,12 +79,12 @@ export default function Home() {
       case 'admin':
         return <AdminPage />;
       default:
-        return <DashboardPage onNavigate={setCurrentPage} />;
+        return <DashboardPage onNavigate={navigateTo} />;
     }
   };
 
   return (
-    <HRLayout currentPage={currentPage} onNavigate={setCurrentPage}>
+    <HRLayout currentPage={currentPage} onNavigate={navigateTo}>
       {renderPage()}
     </HRLayout>
   );

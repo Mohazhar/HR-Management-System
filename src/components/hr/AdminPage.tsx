@@ -95,6 +95,7 @@ interface Attendance {
   checkIn: string;
   checkOut: string | null;
   status: string;
+  breaks?: string | null;
   employee?: {
     name: string;
     employeeId: string;
@@ -923,9 +924,6 @@ export default function AdminPage() {
               {loading ? (
                 <div className="flex items-center justify-center py-8">
                   <Loader2 className="w-6 h-6 animate-spin text-[#ea580c]" />
-                </div>
-              ) : attendances.length > 0 ? (
-                <div className="overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
@@ -933,6 +931,7 @@ export default function AdminPage() {
                         <TableHead>Date</TableHead>
                         <TableHead>Check In</TableHead>
                         <TableHead>Check Out</TableHead>
+                        <TableHead>Breaks</TableHead>
                         <TableHead>Status</TableHead>
                       </TableRow>
                     </TableHeader>
@@ -948,6 +947,27 @@ export default function AdminPage() {
                           <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
                           <TableCell>{new Date(record.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</TableCell>
                           <TableCell>{record.checkOut ? new Date(record.checkOut).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '---'}</TableCell>
+                          <TableCell>
+                            <div className="flex flex-wrap gap-1">
+                              {(() => {
+                                const breaks = JSON.parse(record.breaks || '[]');
+                                if (breaks.length === 0) return <span className="text-xs text-gray-400 italic">No breaks</span>;
+                                return breaks.map((b: any, idx: number) => {
+                                  const isActive = !b.end;
+                                  return (
+                                    <Badge
+                                      key={idx}
+                                      variant="outline"
+                                      className={`${isActive ? 'bg-blue-50 text-blue-700 border-blue-200 animate-pulse' : 'bg-gray-50 text-gray-500'} text-[10px] px-1 py-0`}
+                                    >
+                                      {b.type.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                                      {isActive ? ' (Active)' : ''}
+                                    </Badge>
+                                  );
+                                });
+                              })()}
+                            </div>
+                          </TableCell>
                           <TableCell>
                             <Badge variant={record.checkOut ? "secondary" : "default"} className={!record.checkOut ? "bg-green-100 text-green-700 border-green-200 hover:bg-green-200" : ""}>
                               <div className="flex items-center gap-1.5">

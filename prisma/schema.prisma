@@ -87,6 +87,7 @@ model Attendance {
   date        String    // Format YYYY-MM-DD for easy querying
   checkIn     DateTime
   checkOut    DateTime?
+  breaks      String?   @default("[]") // JSON string storing array of {type, start, end}
   status      String    @default("present") // present, late, half_day
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt

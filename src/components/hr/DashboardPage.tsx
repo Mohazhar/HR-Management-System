@@ -9,6 +9,7 @@ import { CalendarDays, DollarSign, Clock, TrendingUp, Building2, Mail, Award, Us
 import { useEffect, useState, useRef, useCallback } from 'react';
 import Webcam from 'react-webcam';
 import { Progress } from '@/components/ui/progress';
+import { Coffee, Utensils } from 'lucide-react';
 
 interface Leave {
   id: string;
@@ -175,6 +176,32 @@ export default function DashboardPage({ onNavigate }: { onNavigate: (page: 'dash
     } catch (error) {
       console.error('Check out error:', error);
     }
+  };
+
+  const handleBreakAction = async (breakType: string) => {
+    try {
+      const res = await fetch('/api/attendance', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ breakType })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTodayAttendance(data.attendance);
+      }
+    } catch (error) {
+      console.error('Break action error:', error);
+    }
+  };
+
+  const getBreakStatus = (breakType: string) => {
+    if (!todayAttendance || !todayAttendance.breaks) return 'none';
+    const breaks = JSON.parse(todayAttendance.breaks);
+    const specificBreak = breaks.find((b: any) => b.type === breakType && !b.end);
+    if (specificBreak) return 'active';
+    const finishedBreak = breaks.find((b: any) => b.type === breakType && b.end);
+    if (finishedBreak) return 'completed';
+    return 'none';
   };
 
   const getStatusColor = (status: string) => {
@@ -639,17 +666,60 @@ export default function DashboardPage({ onNavigate }: { onNavigate: (page: 'dash
               </div>
 
               {!todayAttendance ? (
-                <Button onClick={handleCheckIn} className="w-full bg-[#ea580c] hover:bg-[#c2410c] text-white">
+                <Button onClick={handleCheckIn} className="w-full bg-[#ea580c] hover:bg-[#c2410c] text-white shadow-lg shadow-orange-200">
                   <LogIn className="w-4 h-4 mr-2" />
                   Check In
                 </Button>
               ) : !todayAttendance.checkOut ? (
-                <Button onClick={handleCheckOut} variant="outline" className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Check Out
-                </Button>
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 gap-2">
+                    {/* Break Options */}
+                    <p className="text-[10px] font-bold text-gray-400 uppercase tracking-widest mb-1">Break Management</p>
+                    <div className="flex flex-col gap-2">
+                      {[
+                        { id: 'morning_tea', label: 'Morning Tea', icon: Coffee },
+                        { id: 'lunch', label: 'Lunch Break', icon: Utensils },
+                        { id: 'evening_tea', label: 'Evening Tea', icon: Coffee },
+                      ].map((b) => {
+                        const status = getBreakStatus(b.id);
+                        return (
+                          <Button
+                            key={b.id}
+                            size="sm"
+                            variant={status === 'active' ? 'default' : 'outline'}
+                            disabled={status === 'completed'}
+                            onClick={() => handleBreakAction(b.id)}
+                            className={`justify-start h-10 transition-all ${status === 'active'
+                              ? 'bg-blue-600 hover:bg-blue-700 text-white'
+                              : status === 'completed'
+                                ? 'bg-gray-100 text-gray-400 border-gray-200 cursor-not-allowed'
+                                : 'border-blue-200 text-blue-600 hover:bg-blue-50'
+                              }`}
+                          >
+                            <b.icon className="w-4 h-4 mr-2" />
+                            <span className="flex-1 text-left">{b.label}</span>
+                            {status === 'active' ? (
+                              <span className="text-[10px] bg-white/20 px-2 py-0.5 rounded-full animate-pulse">On Break</span>
+                            ) : status === 'completed' ? (
+                              <span className="text-[10px] text-gray-400 uppercase">Finished</span>
+                            ) : (
+                              <span className="text-[10px] opacity-60">Start</span>
+                            )}
+                          </Button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  <div className="pt-2 border-t border-gray-100">
+                    <Button onClick={handleCheckOut} variant="outline" className="w-full text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700 transition-colors">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Check Out
+                    </Button>
+                  </div>
+                </div>
               ) : (
-                <Button disabled variant="outline" className="w-full">
+                <Button disabled variant="outline" className="w-full border-green-200 bg-green-50 text-green-700">
                   <CheckCircle className="w-4 h-4 mr-2" />
                   Attendance Completed
                 </Button>

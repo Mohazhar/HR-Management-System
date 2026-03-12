@@ -15,6 +15,7 @@ import {
   LogOut,
   X,
   Clock,
+  ArrowLeft,
 } from 'lucide-react';
 import { NotificationsDropdown } from './NotificationsDropdown';
 
@@ -144,7 +145,17 @@ export default function HRLayout({ children, currentPage, onNavigate }: HRLayout
     <div className="min-h-screen bg-gray-50">
       {/* Mobile Header */}
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 bg-white border-b border-gray-200 flex items-center justify-between px-4 z-40">
-        <div className="flex items-center">
+        <div className="flex items-center gap-2">
+          {currentPage !== 'dashboard' && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8 text-[#ea580c] mr-1"
+              onClick={() => window.history.back()}
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+          )}
           <img src="/logo.png" alt="Ravaan Space Logo" className="h-8 w-auto object-contain" />
         </div>
 
@@ -193,6 +204,19 @@ export default function HRLayout({ children, currentPage, onNavigate }: HRLayout
       {/* Main Content */}
       <main className="lg:pl-72 pt-16 lg:pt-0">
         <div className="min-h-screen">
+          {currentPage !== 'dashboard' && (
+            <div className="hidden lg:flex p-4 border-b border-gray-200 bg-white sticky top-0 z-30 items-center gap-4">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="text-gray-600 hover:text-[#ea580c] flex items-center gap-2"
+                onClick={() => window.history.back()}
+              >
+                <ArrowLeft className="w-4 h-4" />
+                Back to Overview
+              </Button>
+            </div>
+          )}
           {children}
         </div>
       </main>
