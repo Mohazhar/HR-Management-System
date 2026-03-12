@@ -299,6 +299,81 @@ export default function AdminPage() {
     }
   };
 
+  const downloadAttendanceReport = async () => {
+    const doc = new jsPDF();
+    const pageWidth = doc.internal.pageSize.getWidth();
+    const now = new Date();
+    const month = now.getMonth();
+    const year = now.getFullYear();
+    const monthName = monthNames[month];
+
+    // Header styling
+    try {
+      const imgRes = await fetch('/logo.png');
+      const imgBlob = await imgRes.blob();
+      const reader = new FileReader();
+      await new Promise((resolve) => {
+        reader.onloadend = () => {
+          doc.addImage(reader.result as string, 'PNG', pageWidth / 2 - 25, 10, 50, 12);
+          resolve(null);
+        };
+        reader.readAsDataURL(imgBlob);
+      });
+    } catch (e) {
+      console.error("Could not add logo to report:", e);
+    }
+
+    doc.setFontSize(16);
+    doc.setTextColor(234, 88, 12); // #ea580c
+    doc.text(`Monthly Attendance Report - ${monthName} ${year}`, pageWidth / 2, 30, { align: 'center' });
+
+    doc.setFontSize(10);
+    doc.setTextColor(100, 100, 100);
+    doc.text(`Generated on: ${now.toLocaleString()}`, pageWidth / 2, 36, { align: 'center' });
+
+    // Prepare table data
+    const tableData = employees.map(emp => {
+      // Worked days in current month
+      const workedDays = attendances.filter(a => {
+        const aDate = new Date(a.date);
+        return a.employeeId === emp.id && aDate.getMonth() === month && aDate.getFullYear() === year;
+      }).length;
+
+      // Leaves taken in current month
+      const leavesTaken = leaves.filter(l => {
+        if (l.status !== 'approved' || (l.employee?.employeeId !== emp.employeeId && (l as any).employeeId !== emp.id)) return false;
+        const from = new Date(l.fromDate);
+        const to = new Date(l.toDate);
+        return from.getMonth() === month && from.getFullYear() === year;
+      }).reduce((acc, l) => {
+        const from = new Date(l.fromDate);
+        const to = new Date(l.toDate);
+        const diffTime = Math.abs(to.getTime() - from.getTime());
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
+        return acc + diffDays;
+      }, 0);
+
+      return [
+        emp.name,
+        emp.employeeId,
+        workedDays.toString(),
+        leavesTaken.toString(),
+        workedDays.toString() // Total working days (assuming same as worked days for this month report)
+      ];
+    });
+
+    autoTable(doc, {
+      startY: 45,
+      head: [['Employee Name', 'ID', 'Worked (Days)', 'Leaves (Days)', 'Total Days']],
+      body: tableData,
+      theme: 'grid',
+      headStyles: { fillColor: [234, 88, 12] },
+      styles: { fontSize: 9 },
+    });
+
+    doc.save(`Attendance_Report_${monthName}_${year}.pdf`);
+  };
+
   const handleLeaveAction = async (leaveId: string, status: 'approved' | 'rejected') => {
     try {
       const res = await fetch(`/api/leaves/${leaveId}`, {
@@ -943,9 +1018,20 @@ export default function AdminPage() {
                 <CardTitle className="text-lg font-semibold text-[#ea580c]">Attendance Records</CardTitle>
                 <CardDescription>View all employee check-in and check-out logs</CardDescription>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-full border border-green-200">
-                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
-                <span className="text-sm font-medium">{attendances.filter(a => !a.checkOut).length} Online</span>
+              <div className="flex items-center gap-3">
+                <Button
+                  onClick={downloadAttendanceReport}
+                  variant="outline"
+                  size="sm"
+                  className="border-[#ea580c] text-[#ea580c] hover:bg-orange-50"
+                >
+                  <Download className="w-4 h-4 mr-2" />
+                  Download Report
+                </Button>
+                <div className="flex items-center gap-2 px-3 py-1 bg-green-50 text-green-700 rounded-full border border-green-200">
+                  <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                  <span className="text-sm font-medium">{attendances.filter(a => !a.checkOut).length} Online</span>
+                </div>
               </div>
             </CardHeader>
             <CardContent>
