@@ -464,13 +464,14 @@ export default function ExpensesPage() {
 
       {/* Expenses Table */}
       <Card className="border-0 shadow-md">
-        <CardHeader>
-          <CardTitle className="text-lg font-semibold text-[#ea580c]">Expense Records</CardTitle>
-          <CardDescription>All company expense records</CardDescription>
-        </CardHeader>
-        <div className="w-48">
+        <CardHeader className="flex flex-row items-center justify-between space-y-0">
+          <div>
+            <CardTitle className="text-lg font-semibold text-[#ea580c]">Expense Records</CardTitle>
+            <CardDescription>All company expense records</CardDescription>
+          </div>
+          <div className="w-48">
             <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-              <SelectTrigger className="border-[#ea580c] ml-350 mt-[-50] text-[#ea580c]">
+              <SelectTrigger className="border-[#ea580c] text-[#ea580c]">
                 <SelectValue placeholder="Filter by Category" />
               </SelectTrigger>
               <SelectContent>
@@ -481,6 +482,7 @@ export default function ExpensesPage() {
               </SelectContent>
             </Select>
           </div>
+        </CardHeader>
         <CardContent>
           {loading ? (
             <div className="flex items-center justify-center py-8">
