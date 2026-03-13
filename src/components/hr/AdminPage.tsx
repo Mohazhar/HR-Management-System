@@ -41,7 +41,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import { Users, UserPlus, Check, X, Loader2, FileText, DollarSign, Trash2, Edit, Download, Clock, LogIn, LogOut, CheckCircle, CalendarDays, Coffee } from 'lucide-react';
+import { Users, UserPlus, Check, X, Loader2, FileText, DollarSign, Trash2, Edit, Download, Clock, LogIn, LogOut, CheckCircle, CalendarDays, Coffee, Utensils } from 'lucide-react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
@@ -592,6 +592,41 @@ export default function AdminPage() {
     }
   };
 
+  const handleBreakAction = async (breakType: string) => {
+    try {
+      const res = await fetch('/api/attendance', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ breakType })
+      });
+      const data = await res.json();
+      if (data.success) {
+        setTodayAttendance(data.attendance);
+        fetchData();
+      }
+    } catch (error) {
+      console.error('Break action error:', error);
+    }
+  };
+
+  const getBreakStatus = (breakType: string) => {
+    if (!todayAttendance || !todayAttendance.breaks) return 'none';
+    let breaks = [];
+    try {
+      breaks = typeof todayAttendance.breaks === 'string'
+        ? JSON.parse(todayAttendance.breaks)
+        : todayAttendance.breaks;
+      if (!Array.isArray(breaks)) breaks = [];
+    } catch (e) {
+      breaks = [];
+    }
+    const specificBreak = breaks.find((b: any) => b.type === breakType && !b.end);
+    if (specificBreak) return 'active';
+    const finishedBreak = breaks.find((b: any) => b.type === breakType && b.end);
+    if (finishedBreak) return 'completed';
+    return 'none';
+  };
+
   const pendingLeaves = leaves.filter((l) => l.status === 'pending');
 
   if (!isAdmin) {
@@ -633,14 +668,44 @@ export default function AdminPage() {
                   Check In
                 </Button>
               ) : !todayAttendance.checkOut ? (
-                <div className="w-full flex gap-3">
-                  <div className="flex-1 text-center bg-gray-50 rounded px-2 py-1.5 border border-gray-100 font-medium text-gray-700 text-sm flex items-center justify-center">
-                    {new Date(todayAttendance.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                <div className="w-full space-y-3">
+                  <div className="flex gap-3">
+                    <div className="flex-1 text-center bg-gray-50 rounded px-2 py-1.5 border border-gray-100 font-medium text-gray-700 text-sm flex items-center justify-center">
+                      {new Date(todayAttendance.checkIn).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                    </div>
+                    <Button size="sm" onClick={handleCheckOut} variant="outline" className="flex-1 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
+                      <LogOut className="w-4 h-4 mr-2" />
+                      Out
+                    </Button>
                   </div>
-                  <Button size="sm" onClick={handleCheckOut} variant="outline" className="flex-1 text-red-600 border-red-200 hover:bg-red-50 hover:text-red-700">
-                    <LogOut className="w-4 h-4 mr-2" />
-                    Out
-                  </Button>
+                  
+                  <div className="grid grid-cols-3 gap-2">
+                    {[
+                      { id: 'morning_tea', label: 'Tea', icon: Coffee },
+                      { id: 'lunch', label: 'Lunch', icon: Utensils },
+                      { id: 'evening_tea', label: 'Tea', icon: Coffee },
+                    ].map((b) => {
+                      const status = getBreakStatus(b.id);
+                      return (
+                        <Button
+                          key={b.id}
+                          size="sm"
+                          variant={status === 'active' ? 'default' : 'outline'}
+                          disabled={status === 'completed'}
+                          onClick={() => handleBreakAction(b.id)}
+                          className={`h-8 text-xs px-1 ${status === 'active'
+                            ? 'bg-blue-600 hover:bg-blue-700 text-white animate-pulse'
+                            : status === 'completed'
+                              ? 'bg-gray-100 text-gray-400 border-gray-200'
+                              : 'border-blue-100 text-blue-600 hover:bg-blue-50'
+                            }`}
+                        >
+                          <b.icon className="w-3 h-3 mr-1" />
+                          {status === 'active' ? 'End' : status === 'completed' ? 'Done' : b.label}
+                        </Button>
+                      );
+                    })}
+                  </div>
                 </div>
               ) : (
                 <Button size="sm" disabled variant="outline" className="w-full">
