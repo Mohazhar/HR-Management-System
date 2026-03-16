@@ -58,6 +58,7 @@ interface Employee {
     sick: number;
     personal: number;
   };
+  canAddExpense: boolean;
 }
 
 interface Leave {
@@ -135,6 +136,7 @@ export default function AdminPage() {
     annualLeave: '15',
     sickLeave: '10',
     personalLeave: '5',
+    canAddExpense: false,
   });
 
   const [payslipForm, setPayslipForm] = useState({
@@ -199,6 +201,7 @@ export default function AdminPage() {
       annualLeave: '15',
       sickLeave: '10',
       personalLeave: '5',
+      canAddExpense: false,
     });
     setEditingEmployee(null);
   };
@@ -221,6 +224,7 @@ export default function AdminPage() {
       annualLeave: employee.leaveBalance.annual.toString(),
       sickLeave: employee.leaveBalance.sick.toString(),
       personalLeave: employee.leaveBalance.personal.toString(),
+      canAddExpense: employee.canAddExpense || false,
     });
     setEmployeeDialogOpen(true);
   };
@@ -243,6 +247,7 @@ export default function AdminPage() {
           sick: parseInt(employeeForm.sickLeave),
           personal: parseInt(employeeForm.personalLeave),
         },
+        canAddExpense: employeeForm.canAddExpense,
       };
 
       if (editingEmployee) {
@@ -827,6 +832,7 @@ export default function AdminPage() {
                         <TableHead>Department</TableHead>
                         <TableHead>Designation</TableHead>
                         <TableHead>Role</TableHead>
+                        <TableHead>Exp. Permission</TableHead>
                         <TableHead>Leave Balance</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -842,6 +848,11 @@ export default function AdminPage() {
                           <TableCell>
                             <Badge variant={employee.role === 'admin' ? 'default' : 'secondary'}>
                               {employee.role}
+                            </Badge>
+                          </TableCell>
+                          <TableCell>
+                            <Badge variant={employee.canAddExpense ? "default" : "outline"} className={employee.canAddExpense ? "bg-green-100 text-green-700 border-green-200" : "text-gray-400"}>
+                              {employee.canAddExpense ? 'Granted' : 'None'}
                             </Badge>
                           </TableCell>
                           <TableCell>
@@ -1324,6 +1335,19 @@ export default function AdminPage() {
                   />
                 </div>
               </div>
+            </div>
+
+            <div className="flex items-center space-x-2 p-3 bg-orange-50 rounded-lg border border-orange-100">
+              <input
+                type="checkbox"
+                id="canAddExpense"
+                checked={employeeForm.canAddExpense}
+                onChange={(e) => setEmployeeForm({ ...employeeForm, canAddExpense: e.target.checked })}
+                className="w-4 h-4 text-[#ea580c] border-gray-300 rounded focus:ring-[#ea580c]"
+              />
+              <label htmlFor="canAddExpense" className="text-sm font-medium text-gray-700 cursor-pointer">
+                Allow adding company expenses
+              </label>
             </div>
 
             <DialogFooter>
