@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
@@ -123,6 +124,7 @@ export default function AdminPage() {
   const [editingEmployee, setEditingEmployee] = useState<Employee | null>(null);
   const [editingPayslip, setEditingPayslip] = useState<Payslip | null>(null);
   const [deletingEmployee, setDeletingEmployee] = useState<Employee | null>(null);
+  const [addLeaveDialogOpen, setAddLeaveDialogOpen] = useState(false);
 
   // Forms
   const [employeeForm, setEmployeeForm] = useState({
@@ -146,6 +148,14 @@ export default function AdminPage() {
     basicSalary: '',
     allowances: '',
     deductions: '',
+  });
+
+  const [leaveForm, setLeaveForm] = useState({
+    employeeId: '',
+    leaveType: '',
+    fromDate: '',
+    toDate: '',
+    reason: '',
   });
 
   const isAdmin = user?.role === 'admin';
@@ -409,6 +419,30 @@ export default function AdminPage() {
       }
     } catch (err) {
       console.error('Error deleting leave:', err);
+    }
+  };
+
+  const handleAdminAddLeave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSubmitting(true);
+    try {
+      const res = await fetch('/api/leaves', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(leaveForm)
+      });
+      const data = await res.json();
+      if (data.success) {
+        fetchData();
+        setAddLeaveDialogOpen(false);
+        setLeaveForm({ employeeId: '', leaveType: '', fromDate: '', toDate: '', reason: '' });
+      } else {
+        alert(data.error || 'Failed to add leave');
+      }
+    } catch (err) {
+      console.error('Error adding leave:', err);
+    } finally {
+      setSubmitting(false);
     }
   };
 
@@ -895,9 +929,15 @@ export default function AdminPage() {
         {/* Leave Requests Tab */}
         <TabsContent value="leaves">
           <Card className="border-0 shadow-md">
-            <CardHeader>
-              <CardTitle className="text-lg font-semibold text-[#ea580c]">Leave Requests</CardTitle>
-              <CardDescription>Approve or reject employee leave requests</CardDescription>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <div>
+                <CardTitle className="text-lg font-semibold text-[#ea580c]">Leave & Emergency</CardTitle>
+                <CardDescription>Approve requests or log sudden leaves</CardDescription>
+              </div>
+              <Button onClick={() => setAddLeaveDialogOpen(true)} className="bg-[#ea580c] hover:bg-[#c2410c] text-white">
+                <CalendarDays className="w-4 h-4 mr-2" />
+                Log Leave
+              </Button>
             </CardHeader>
             <CardContent>
               {loading ? (
@@ -1152,13 +1192,18 @@ export default function AdminPage() {
                                 ) : (
                                   breaks.map((b: any, idx: number) => {
                                     const isActive = !b.end;
+                                    let durationStr = '';
+                                    if (b.start && b.end) {
+                                      const min = Math.round((new Date(b.end).getTime() - new Date(b.start).getTime()) / 60000);
+                                      durationStr = !isNaN(min) ? (min > 0 ? ` (${min}m)` : ` (<1m)`) : '';
+                                    }
                                     return (
                                       <Badge
                                         key={idx}
                                         variant="outline"
                                         className={`${isActive ? 'bg-blue-50 text-blue-700 border-blue-200 animate-pulse' : 'bg-gray-50 text-gray-500'} text-[10px] px-1 py-0`}
                                       >
-                                        {b.type.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
+                                        {b.type.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}{durationStr}
                                       </Badge>
                                     );
                                   })
@@ -1508,6 +1553,92 @@ export default function AdminPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Log Leave Dialog */}
+      <Dialog open={addLeaveDialogOpen} onOpenChange={setAddLeaveDialogOpen}>
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle>Log Emergency/Sudden Leave</DialogTitle>
+            <DialogDescription>Add a leave record on behalf of an employee.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleAdminAddLeave} className="space-y-4 py-4">
+            <div className="space-y-2">
+              <Label htmlFor="employeeId">Employee</Label>
+              <Select
+                value={leaveForm.employeeId}
+                onValueChange={(val) => setLeaveForm({ ...leaveForm, employeeId: val })}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select employee" />
+                </SelectTrigger>
+                <SelectContent>
+                  {employees.map(emp => (
+                    <SelectItem key={emp.id} value={emp.id}>{emp.name} ({emp.employeeId})</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="leaveType">Leave Type</Label>
+              <Select
+                value={leaveForm.leaveType}
+                onValueChange={(val) => setLeaveForm({ ...leaveForm, leaveType: val })}
+                required
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="annual">Annual Leave</SelectItem>
+                  <SelectItem value="sick">Sick Leave</SelectItem>
+                  <SelectItem value="personal">Personal Leave</SelectItem>
+                  <SelectItem value="unpaid">Unpaid Leave</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="fromDate">From</Label>
+                <Input
+                  id="fromDate"
+                  type="date"
+                  value={leaveForm.fromDate}
+                  onChange={(e) => setLeaveForm({ ...leaveForm, fromDate: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="toDate">To</Label>
+                <Input
+                  id="toDate"
+                  type="date"
+                  value={leaveForm.toDate}
+                  onChange={(e) => setLeaveForm({ ...leaveForm, toDate: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="reason">Reason / Note</Label>
+              <Textarea
+                id="reason"
+                placeholder="Admin logged: emergency leave..."
+                value={leaveForm.reason}
+                onChange={(e) => setLeaveForm({ ...leaveForm, reason: e.target.value })}
+                required
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setAddLeaveDialogOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={submitting} className="bg-[#ea580c] hover:bg-[#c2410c] text-white">
+                {submitting ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : null}
+                Save Leave
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

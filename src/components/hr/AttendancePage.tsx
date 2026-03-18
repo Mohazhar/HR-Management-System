@@ -99,15 +99,22 @@ export default function AttendancePage() {
                                                         {breaks.length === 0 ? (
                                                             <span className="text-xs text-gray-400 italic">N/A</span>
                                                         ) : (
-                                                            breaks.map((b: any, idx: number) => (
-                                                                <Badge
-                                                                    key={idx}
-                                                                    variant="outline"
-                                                                    className={`${!b.end ? 'bg-blue-50 text-blue-700 border-blue-200 animate-pulse' : 'bg-gray-50 text-gray-500'} text-[10px] px-1 py-0`}
-                                                                >
-                                                                    {b.type.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}
-                                                                </Badge>
-                                                            ))
+                                                            breaks.map((b: any, idx: number) => {
+                                                                let durationStr = '';
+                                                                if (b.start && b.end) {
+                                                                    const min = Math.round((new Date(b.end).getTime() - new Date(b.start).getTime()) / 60000);
+                                                                    durationStr = !isNaN(min) ? (min > 0 ? ` (${min}m)` : ` (<1m)`) : '';
+                                                                }
+                                                                return (
+                                                                    <Badge
+                                                                        key={idx}
+                                                                        variant="outline"
+                                                                        className={`${!b.end ? 'bg-blue-50 text-blue-700 border-blue-200 animate-pulse' : 'bg-gray-50 text-gray-500'} text-[10px] px-1 py-0`}
+                                                                    >
+                                                                        {b.type.split('_').map((w: string) => w.charAt(0).toUpperCase() + w.slice(1)).join(' ')}{durationStr}
+                                                                    </Badge>
+                                                                );
+                                                            })
                                                         )}
                                                     </div>
                                                 </TableCell>
