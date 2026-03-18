@@ -195,8 +195,7 @@ export default function AdminPage() {
 
   useEffect(() => {
     fetchData();
-    const interval = setInterval(fetchData, 10000); // Poll every 10 seconds
-    return () => clearInterval(interval);
+    // Removed 10s polling interval to prevent terminal/DB spam.
   }, []);
 
   const resetEmployeeForm = () => {

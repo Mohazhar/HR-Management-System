@@ -64,9 +64,8 @@ export function NotificationsDropdown({
 
     useEffect(() => {
         fetchNotifications();
-        // Setup fast polling every 5 seconds for immediate notifications
-        const interval = setInterval(fetchNotifications, 5000);
-        return () => clearInterval(interval);
+        // Removed aggressive 5-second polling to prevent continuous API calls & terminal spam.
+        // Notifications will now be fetched on component mount/page refresh.
     }, []);
 
     const markAsRead = async (id?: string) => {
