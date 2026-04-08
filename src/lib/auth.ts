@@ -61,7 +61,7 @@ export async function getAuthUser() {
 
 export async function login(email: string, password: string) {
   let employee;
-  let retries = 3;
+  let retries = 6; // Increased to 6 retries
   while (retries > 0) {
     try {
       employee = await db.employee.findUnique({
@@ -69,9 +69,10 @@ export async function login(email: string, password: string) {
       });
       break;
     } catch (error: any) {
-      if (error?.message?.includes('P6008') && retries > 1) {
+      if ((error?.message?.includes('P6008') || error?.code === 'P5000') && retries > 1) {
         retries--;
-        await new Promise((resolve) => setTimeout(resolve, 2000)); // wait 2s to allow DB wakeup
+        console.warn(`[DB Connection] Retrying... Accelerate/Neon wake-up in progress. (${retries} attempts left)`);
+        await new Promise((resolve) => setTimeout(resolve, 3000)); // wait 3s to allow DB wakeup
         continue;
       }
       throw error;
