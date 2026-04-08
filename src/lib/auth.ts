@@ -38,10 +38,24 @@ export async function getAuthUser() {
     return null;
   }
 
-  const employee = await db.employee.findUnique({
-    where: { employeeId: payload.employeeId },
-  });
-
+  let employee;
+  let retries = 5;
+  while (retries > 0) {
+    try {
+      employee = await db.employee.findUnique({
+        where: { employeeId: payload.employeeId },
+      });
+      break;
+    } catch (error: any) {
+      console.warn(`[DB Connection] getAuthUser fetch failed. Retries left: ${retries - 1}`);
+      if (retries > 1) {
+        retries--;
+        await new Promise((resolve) => setTimeout(resolve, 3000));
+        continue;
+      }
+      return null;
+    }
+  }
   if (!employee) {
     return null;
   }
@@ -61,7 +75,7 @@ export async function getAuthUser() {
 
 export async function login(email: string, password: string) {
   let employee;
-  let retries = 6; // Increased to 6 retries
+  let retries = 5;
   while (retries > 0) {
     try {
       employee = await db.employee.findUnique({
@@ -69,10 +83,12 @@ export async function login(email: string, password: string) {
       });
       break;
     } catch (error: any) {
-      if ((error?.message?.includes('P6008') || error?.code === 'P5000') && retries > 1) {
+      console.warn(`[DB Connection] Prisma fetch failed. Retries left: ${retries - 1}`);
+      console.warn(error);
+
+      if (retries > 1) {
         retries--;
-        console.warn(`[DB Connection] Retrying... Accelerate/Neon wake-up in progress. (${retries} attempts left)`);
-        await new Promise((resolve) => setTimeout(resolve, 3000)); // wait 3s to allow DB wakeup
+        await new Promise((resolve) => setTimeout(resolve, 3000));
         continue;
       }
       throw error;
