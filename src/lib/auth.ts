@@ -60,9 +60,23 @@ export async function getAuthUser() {
 }
 
 export async function login(email: string, password: string) {
-  const employee = await db.employee.findUnique({
-    where: { email },
-  });
+  let employee;
+  let retries = 3;
+  while (retries > 0) {
+    try {
+      employee = await db.employee.findUnique({
+        where: { email },
+      });
+      break;
+    } catch (error: any) {
+      if (error?.message?.includes('P6008') && retries > 1) {
+        retries--;
+        await new Promise((resolve) => setTimeout(resolve, 2000)); // wait 2s to allow DB wakeup
+        continue;
+      }
+      throw error;
+    }
+  }
 
   if (!employee) {
     return { success: false, error: 'Invalid credentials' };

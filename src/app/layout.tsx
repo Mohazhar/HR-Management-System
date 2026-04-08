@@ -15,6 +15,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"),
   title: "Ravaan Space Portal - Human Resource Management System",
   description: "Modern HR Management System for Ravaan Space, built with Next.js, TypeScript, and Tailwind CSS.",
   keywords: ["Ravaan Space", "HR", "Human Resources", "Next.js", "TypeScript", "Tailwind CSS", "Employee Management"],
